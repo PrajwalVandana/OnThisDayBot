@@ -12,6 +12,13 @@ async def error(message):
         get(message.guild.id)['signal'])
 
 
+async def events(message, month, day):  # TODO: this doesn't actually get events yet
+    """Gets the events to send when !otd is called."""
+    await message.channel.send(
+        wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
+                       auto_suggest=False).summary)
+
+
 def get(guild_id):
     """Gets the settings for a specific guild from the replit database given its id."""
     assert type(guild_id) == int
@@ -135,21 +142,11 @@ async def on_message(message_in):
                             month, day = tup
 
                         if day == 31 and month in (1, 3, 5, 7, 8, 10, 12):
-                            await message_in.channel.send(
-                                wikipedia.page(title=MONTHS[month - 1] + ' ' +
-                                               str(day),
-                                               auto_suggest=False).summary)
-                        elif day == 30 and month in range(1,
-                                                          13) and month != 2:
-                            await message_in.channel.send(
-                                wikipedia.page(title=MONTHS[month - 1] + ' ' +
-                                               str(day),
-                                               auto_suggest=False).summary)
+                            await events(message_in, month, day)
+                        elif day == 30 and month in range(1, 13) and month != 2:
+                            await events(message_in, month, day)
                         elif 1 <= day <= 29 and month in range(1, 13):
-                            await message_in.channel.send(
-                                wikipedia.page(title=MONTHS[month - 1] + ' ' +
-                                               str(day),
-                                               auto_suggest=False).summary)
+                            await events(message_in, month, day)
                         else:
                             await error(message_in)
                     except ValueError:
