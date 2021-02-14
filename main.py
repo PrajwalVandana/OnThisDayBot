@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timezone, timedelta
 import wikipedia
 import discord
+import random
 from replit import db
 
 
@@ -12,12 +13,30 @@ async def error(message):
         get(message.guild.id)['signal'])
 
 
-# TODO: this doesn't actually get events yet
-async def events(message, month, day):
+async def events(message, month, day, count):
     """Gets the events to send when !otd is called."""
-    await message.channel.send(
-        wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
-                       auto_suggest=False).summary)
+    page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
+                          auto_suggest=False).content.split('\n')
+
+    events = []
+    i = 0
+    while ''.join(page[i].split()) != '==Events==':
+        i += 1
+
+    i += 1
+    while not (page[i].startswith('==') and not page[i].startswith('===')):
+        if not page[i] or page[i].startswith('==='):
+            i += 1
+        else:
+            if page[i].startswith('0'):
+                page[i] = page[i][1:]
+            events.append(' '.join(page[i].split()))
+            i += 1
+
+    await message.channel.send('\n'.join(
+        sorted(random.sample(events,
+                             get(message.guild.id)['count']),
+               key=lambda s: int(s[:s.find('–') - 1]))))
 
 
 def get(guild_id):
@@ -28,6 +47,24 @@ def get(guild_id):
     except KeyError:
         db[guild_id] = {key: val for (key, val) in DEFAULTS.items()}
         return db[guild_id]
+
+
+def today(guild_id, dateformat=None):
+    """Returns the current date of a guild."""
+    if dateformat is None:
+        dateformat = get(guild_id)['dateformat']
+
+    if dateformat == 'md':
+        fmt_str = '%m/%d'
+    elif dateformat == 'dm':
+        fmt_str = '%d/%m'
+    else:
+        raise TypeError("'%s' is an invalid dateformat." % dateformat)
+
+    return datetime.now(
+        timezone(
+            timedelta(hours=get(guild_id)['timezone'][0],
+                      minutes=get(guild_id)['timezone'][1]))).strftime(fmt_str)
 
 
 def write(guild_id, key, val):
@@ -45,7 +82,8 @@ def write(guild_id, key, val):
 def tz_format(tz):
     """Formats a timezone."""
     if tz[0] < 0:
-        return '`UTC-' + str(-tz[0]).zfill(2) + ':' + str(-tz[1]).zfill(2) + '`'
+        return '`UTC-' + str(-tz[0]).zfill(2) + ':' + str(-tz[1]).zfill(
+            2) + '`'
     else:
         return '`UTC+' + str(tz[0]).zfill(2) + ':' + str(tz[1]).zfill(2) + '`'
 
@@ -53,12 +91,20 @@ def tz_format(tz):
 client = discord.Client()
 
 # hard-coded values
-DEFAULTS = {'dateformat': 'md', 'timezone': (0, 0), 'signal': '!otd', 'count': 3}
+DEFAULTS = {
+    'dateformat': 'md',
+    'timezone': (0, 0),
+    'signal': '!otd',
+    'count': 3
+}
 MONTHS = [
     'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'
 ]
-COMMANDS = {'timezone', 'dm', 'md', 'signal', 'dateformat', 'help', 'reset', 'settings'}
+COMMANDS = {
+    'timezone', 'dm', 'md', 'signal', 'dateformat', 'help', 'reset',
+    'settings', 'count'
+}
 
 # message_str = input()  # debug code
 
@@ -70,10 +116,12 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild):
-    general = discord.utils.find(lambda x: x.name == 'general',
-                                 guild.text_channels)
-    if general and general.permissions_for(guild.me).send_messages:
-        await general.send('Hello %s!' % guild.name)
+    for channel in guild.text_channels:
+        if channel.permissions_for(guild.me).send_messages:
+            await channel.send(
+                "Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses."
+                % (guild.name, guild.me.id, get(guild.id)['signal']))
+            return
 
 
 @client.event
@@ -86,16 +134,14 @@ async def on_message(message_in):
         message = message[1:]
 
         if not message:
-            message = [
-                get(guild_id)['dateformat'],
-                datetime.now(
-                    timezone(
-                        timedelta(hours=get(guild_id)['timezone'][0],
-                                  minutes=get(guild_id)['timezone']
-                                  [1]))).strftime('%m/%d')
-            ]
+            message = [get(guild_id)['dateformat'], today(guild_id)]
+        elif message[0].isdigit():
+            message = [get(guild_id)['dateformat'], today(guild_id)] + message
         elif message[0] not in COMMANDS:
             message = [get(guild_id)['dateformat']] + message
+        elif len(message) > 1 and message[0] in (
+                'dm', 'md') and message[1].isdigit():
+            message = [message[0], today(guild_id, message[0]), message[1]]
 
         command = message[0]
         message = message[1:]
@@ -132,9 +178,18 @@ async def on_message(message_in):
                 await message_in.channel.send(
                     "Timezones must start with `+` or `-`")
         elif command in ('dm', 'md'):
-            date_str = message[0]
-            for i in range(len(date_str)):
+            if not message:
+                message.append(today(guild_id, command))
+
+            if len(message) == 1:
+                message.append(str(get(guild_id)['count']))
+
+            date_str, count = message
+            found_sep = False
+            i = 0
+            while i in range(len(date_str)):
                 if not date_str[i].isdigit():
+                    found_sep = True
                     try:
                         tup = int(date_str[:i]), int(date_str[i + 1:])
                         if command == 'dm':
@@ -143,17 +198,22 @@ async def on_message(message_in):
                             month, day = tup
 
                         if day == 31 and month in (1, 3, 5, 7, 8, 10, 12):
-                            await events(message_in, month, day)
+                            await events(message_in, month, day, count)
                         elif day == 30 and month in range(1,
                                                           13) and month != 2:
-                            await events(message_in, month, day)
+                            await events(message_in, month, day, count)
                         elif 1 <= day <= 29 and month in range(1, 13):
-                            await events(message_in, month, day)
+                            await events(message_in, month, day, count)
                         else:
                             await error(message_in)
                     except ValueError:
                         await error(message_in)
-                    break
+                    i = len(date_str)
+                else:
+                    i += 1
+
+            if not found_sep:
+                await error(message_in)
         elif command == 'signal':
             if not message:  # show current signal
                 await message_in.channel.send(
@@ -179,31 +239,32 @@ async def on_message(message_in):
                     "Sorry! I can't understand that dateformat! The dateformats I recognize are `md` and `dm`."
                 )
         elif command == 'help':
-            await message_in.channel.send(
-"""
+            await message_in.channel.send("""
 **Note 1**: If this guild's signal phrase is changed, all appearances of `{0}` will be replaced with your new signal phrase.
-**Note 2**: Anything enclosed by `[]` is an argument.
+**Note 2**: Anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means if one argument in that group is included, all arguments must be included.
 
-`{0} timezone [+/-][hh]:[mm]`
+`{0} timezone <[+/-][hh]:[mm]>`
 Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.
 
-`{0} dm [day][separator][month]`
-Shows random historical events that happened on the specified date. The separator can be any non-numeric character.
+`{0} dm [day][separator][month] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
 
-`{0} md [month][separator][day]`
-Shows random historical events that happened on the specified date. The separator can be any non-numeric character.
+`{0} md [month][separator][day] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
 
-`{0} [n1][separator][n2]`
-Equivalent to `{0} {1} [n1][separator][n2]`, since this guild's default dateformat is `{1}`.
+`{0} <[n1][separator][n2]> <count: number>`
+If no date is passed, shows `count` event(s) that happened today.
+If `count` is not passed as well, then the guild's default `count` is used.
+Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.
 
-`{0}`
-Shows random historical events that happened today.
-
-`{0} signal [phrase]`
+`{0} signal <phrase>`
 Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.
 
-`{0} dateformat [dm/md]`
+`{0} dateformat <dm/md>`
 Changes the guild's dateformat to the specifed dateformat, or shows the guild's current dateformat if no new dateformat is specified.
+
+`{0} count <number>`
+Changes how many event(s) will be shown in the guild, or shows the current `count` value if no new value is specified. 
 
 `{0} help`
 Shows this help message.
@@ -213,17 +274,43 @@ Resets all settings to their defaults.
 
 `{0} settings`
 Shows all settings.
-""".format(get(guild_id)['signal'], get(guild_id)['dateformat']))
+""".format(get(guild_id)['signal'],
+            get(guild_id)['dateformat']))
         elif command == 'reset':
             del db[guild_id]
             await message_in.channel.send(
                 "All settings have been reset to their defaults.")
         elif command == 'settings':
-            await message_in.channel.send(
-"""This guild's signal is `{0}`.
+            count = get(guild_id)['count']
+            await message_in.channel.send("""This guild's signal is `{0}`.
 This guild's timezone is {1}.
 This guild's default dateformat is `{2}`.
-""".format(get(guild_id)['signal'], tz_format(get(guild_id)['timezone']), get(guild_id)['dateformat']))
+This guild will be shown {3} {4} if no `count` value is specified.
+""".format(
+                get(guild_id)['signal'], tz_format(get(guild_id)['timezone']),
+                get(guild_id)['dateformat'], count,
+                'event' if count == 1 else 'events'))
+        elif command == 'count':
+            if not message:  # show current count
+                await message_in.channel.send(
+                    "This guild will be shown %d %s if no `count` value is specified."
+                    % (get(guild_id)['count'],
+                       'event' if count == 1 else 'events'))
+            elif message[0].isdigit():  # change count
+                count = int(message[0])
+                if 1 <= count <= 15:
+                    write(guild_id, 'count', count)
+                    await message_in.channel.send(
+                        "This guild will now be shown %d %s if no `count` value is specified."
+                        % (get(guild_id)['count'],
+                           'event' if count == 1 else 'events'))
+                else:
+                    await message_in.channel.send(
+                        "Sorry! The `count` value can only be set to an integer between `1` and `15`, inclusive."
+                    )
+            else:
+                await message_in.channel.send(
+                    "Sorry! The `count` value can only be set to an integer.")
 
 
 # stored in .env to prevent people stealing the token
