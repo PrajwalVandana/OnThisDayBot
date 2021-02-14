@@ -183,8 +183,6 @@ async def on_message(message_in):
             if len(message) == 1:
                 message.append(str(get(guild_id)['count']))
 
-            print(message)
-
             date_str, count = message
             count = int(count)
             found_sep = False
@@ -248,11 +246,11 @@ async def on_message(message_in):
 `{0} timezone <[+/-][hh]:[mm]>`
 Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.
 
-`{0} dm [day][separator][month] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
+`{0} dm <[day][separator][month]> <count: number>`
+Shows `count` random historical event(s) that happened on the specified date (today if not specified). The separator can be any non-numeric character.
 
-`{0} md [month][separator][day] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
+`{0} md <[month][separator][day]> <count: number>`
+Shows `count` random historical event(s) that happened on the specified date (today if not specified). The separator can be any non-numeric character.
 
 `{0} <[n1][separator][n2]> <count: number>`
 If no date is passed, shows `count` event(s) that happened today.
