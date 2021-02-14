@@ -34,8 +34,7 @@ async def events(message, month, day, count):
             i += 1
 
     await message.channel.send('\n'.join(
-        sorted(random.sample(events,
-                             get(message.guild.id)['count']),
+        sorted(random.sample(events, count),
                key=lambda s: int(s[:s.find('–') - 1]))))
 
 
@@ -184,7 +183,10 @@ async def on_message(message_in):
             if len(message) == 1:
                 message.append(str(get(guild_id)['count']))
 
+            print(message)
+
             date_str, count = message
+            count = int(count)
             found_sep = False
             i = 0
             while i in range(len(date_str)):
