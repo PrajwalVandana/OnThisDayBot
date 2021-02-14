@@ -118,7 +118,9 @@ async def on_guild_join(guild):
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
-                "Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses."
+"""Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
+Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
+""" 
                 % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
 
