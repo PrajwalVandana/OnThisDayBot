@@ -133,7 +133,7 @@ async def on_message(message_in):
     guild_id = message_in.guild.id
 
     message = message_in.content.split()
-    if message[0] == get(guild_id)['signal']:
+    if message and message[0] == get(guild_id)['signal']:
         message = message[1:]
 
         if not message:
