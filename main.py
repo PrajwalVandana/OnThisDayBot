@@ -33,9 +33,12 @@ async def events(message, month, day, count):
             events.append(' '.join(page[i].split()))
             i += 1
 
-    await message.channel.send('\n'.join(
-        sorted(random.sample(events, count),
-               key=lambda s: int(s[:s.find('–') - 1]))))
+    await message.channel.send(
+        '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
+            sorted(random.sample(events, count),
+                   key=lambda s: int(s[:s.find('–') - 1]))) +
+        '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
+        (MONTHS[month - 1], day))
 
 
 def get(guild_id):
@@ -118,7 +121,7 @@ async def on_guild_join(guild):
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
-"""Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
+                """Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
 Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 """ % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
@@ -180,8 +183,6 @@ async def on_message(message_in):
         elif command in ('dm', 'md'):
             if not message:
                 message.append(today(guild_id, command))
-
-            print(message)
 
             if len(message) == 1:
                 message.append(str(get(guild_id)['count']))
@@ -250,8 +251,7 @@ async def on_message(message_in):
                     "Sorry! I can't understand that dateformat! The dateformats I recognize are `md` and `dm`."
                 )
         elif command == 'help':
-            await message_in.channel.send(
-"""
+            await message_in.channel.send("""
 **Note 1**: If this guild's signal phrase is changed, all appearances of `{0}` will be replaced with your new signal phrase.
 **Note 2**: Anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means if one argument in that group is included, all arguments must be included.
 
@@ -294,8 +294,7 @@ Shows all settings.
                 "All settings have been reset to their defaults.")
         elif command == 'settings':
             count = get(guild_id)['count']
-            await message_in.channel.send(
-"""This guild's signal is `{0}`.
+            await message_in.channel.send("""This guild's signal is `{0}`.
 This guild's timezone is {1}.
 This guild's default dateformat is `{2}`.
 This guild will be shown {3} {4} if no `count` value is specified.
@@ -304,11 +303,11 @@ This guild will be shown {3} {4} if no `count` value is specified.
                 get(guild_id)['dateformat'], count,
                 'event' if count == 1 else 'events'))
         elif command == 'count':
+            count = get(guild_id)['count']
             if not message:  # show current count
                 await message_in.channel.send(
                     "This guild will be shown %d %s if no `count` value is specified."
-                    % (get(guild_id)['count'],
-                       'event' if count == 1 else 'events'))
+                    % (count, 'event' if count == 1 else 'events'))
             elif message[0].isdigit():  # change count
                 count = int(message[0])
                 if 1 <= count <= 15:
