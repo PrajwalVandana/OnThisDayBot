@@ -120,8 +120,7 @@ async def on_guild_join(guild):
             await channel.send(
 """Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
 Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
-""" 
-                % (guild.name, guild.me.id, get(guild.id)['signal']))
+""" % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
 
 
@@ -186,10 +185,18 @@ async def on_message(message_in):
                 message.append(str(get(guild_id)['count']))
 
             date_str, count = message
-            count = int(count)
-            found_sep = False
+            try:
+                count = int(count)
+                assert count > 15
+                valid_count = True
+                found_sep = False
+            except (ValueError, AssertionError):
+                valid_count = False
+                found_sep = True
+                await error(message_in)
+
             i = 0
-            while i in range(len(date_str)):
+            while i in range(len(date_str)) and valid_count:
                 if not date_str[i].isdigit():
                     found_sep = True
                     try:
@@ -241,7 +248,8 @@ async def on_message(message_in):
                     "Sorry! I can't understand that dateformat! The dateformats I recognize are `md` and `dm`."
                 )
         elif command == 'help':
-            await message_in.channel.send("""
+            await message_in.channel.send(
+"""
 **Note 1**: If this guild's signal phrase is changed, all appearances of `{0}` will be replaced with your new signal phrase.
 **Note 2**: Anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means if one argument in that group is included, all arguments must be included.
 
@@ -284,7 +292,8 @@ Shows all settings.
                 "All settings have been reset to their defaults.")
         elif command == 'settings':
             count = get(guild_id)['count']
-            await message_in.channel.send("""This guild's signal is `{0}`.
+            await message_in.channel.send(
+"""This guild's signal is `{0}`.
 This guild's timezone is {1}.
 This guild's default dateformat is `{2}`.
 This guild will be shown {3} {4} if no `count` value is specified.
