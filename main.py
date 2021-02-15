@@ -181,13 +181,15 @@ async def on_message(message_in):
             if not message:
                 message.append(today(guild_id, command))
 
+            print(message)
+
             if len(message) == 1:
                 message.append(str(get(guild_id)['count']))
 
             date_str, count = message
             try:
                 count = int(count)
-                assert count > 15
+                assert 1 <= count <= 15
                 valid_count = True
                 found_sep = False
             except (ValueError, AssertionError):
