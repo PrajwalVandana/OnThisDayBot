@@ -289,9 +289,17 @@ Shows all settings.
 """.format(get(guild_id)['signal'],
             get(guild_id)['dateformat']))
         elif command == 'reset':
-            del db[guild_id]
-            await message_in.channel.send(
-                "All settings have been reset to their defaults.")
+            if not message:
+                del db[guild_id]
+                await message_in.channel.send(
+                    "All settings have been reset to their defaults.")
+            elif message[0] in COMMANDS:
+                write(guild_id, message[0], DEFAULTS[message[0]])
+                await message_in.channel.send(
+                    "The value `%s` has been reset to its default, %s." %
+                    (message[0], tz_format(DEFAULTS[message[0]]) if message[0] == 'timezone' else ('`' + DEFAULTS[message[0]] + '`' if message[0] != 'count' else DEFAULTS[message[0]])))
+            else:
+                await error(message_in)
         elif command == 'settings':
             count = get(guild_id)['count']
             await message_in.channel.send("""This guild's signal is `{0}`.
