@@ -14,7 +14,9 @@ async def error(message):
 
 
 async def events(message, month, day, count):
-    """Gets the events to send when !otd is called."""
+    """Gets the events to send when !otd is called.
+    
+    NOTE: January is month 1, not 0."""
     page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
                           auto_suggest=False).content.split('\n')
 
@@ -69,6 +71,20 @@ def today(guild_id, dateformat=None):
                       minutes=get(guild_id)['timezone'][1]))).strftime(fmt_str)
 
 
+def random_date():
+    """Returns a random date."""
+    cumulative_days = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+
+    day_num = random.randint(1, 366)
+    month = 1
+    while day_num > cumulative_days[month]:
+        month += 1
+    
+    day = day_num - cumulative_days[month - 1]
+
+    return month, day
+
+
 def write(guild_id, key, val):
     """Writes to the replit database.
 
@@ -105,7 +121,7 @@ MONTHS = [
 ]
 COMMANDS = {
     'timezone', 'dm', 'md', 'signal', 'dateformat', 'help', 'reset',
-    'settings', 'count'
+    'settings', 'count', 'random'
 }
 
 # message_str = input()  # debug code
@@ -121,7 +137,7 @@ async def on_guild_join(guild):
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
-                """Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
+"""Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
 Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 """ % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
@@ -142,9 +158,6 @@ async def on_message(message_in):
             message = [get(guild_id)['dateformat'], today(guild_id)] + message
         elif message[0] not in COMMANDS:
             message = [get(guild_id)['dateformat']] + message
-        elif len(message) > 1 and message[0] in (
-                'dm', 'md') and message[1].isdigit():
-            message = [message[0], today(guild_id, message[0]), message[1]]
 
         command = message[0]
         message = message[1:]
@@ -258,16 +271,19 @@ async def on_message(message_in):
 `{0} timezone <[+/-][hh]:[mm]>`
 Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.
 
-`{0} dm <[day][separator][month]> <count: number>`
-Shows `count` random historical event(s) that happened on the specified date (today if not specified). The separator can be any non-numeric character.
+`{0} dm [day][separator][month] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
 
-`{0} md <[month][separator][day]> <count: number>`
-Shows `count` random historical event(s) that happened on the specified date (today if not specified). The separator can be any non-numeric character.
+`{0} md [month][separator][day] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
 
 `{0} <[n1][separator][n2]> <count: number>`
 If no date is passed, shows `count` event(s) that happened today.
 If `count` is not passed as well, then the guild's default `count` is used.
 Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.
+
+`{0} random <count: number>`
+Shows `count` events on a random date. If count is not specfied, the guild's default `count` is used.
 
 `{0} signal <phrase>`
 Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.
@@ -331,6 +347,14 @@ This guild will be shown {3} {4} if no `count` value is specified.
             else:
                 await message_in.channel.send(
                     "Sorry! The `count` value can only be set to an integer.")
+        elif command == 'random':
+            if not message:
+                message.append(get(guild_id)['count'])
+
+            try:
+                await events(message_in, *random_date(), int(message[0]))
+            except ValueError:
+                await error(message_in)
 
 
 # stored in .env to prevent people stealing the token
