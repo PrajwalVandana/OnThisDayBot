@@ -281,8 +281,8 @@ Changes how many event(s) will be shown in the guild, or shows the current `coun
 `{0} help`
 Shows this help message.
 
-`{0} reset`
-Resets all settings to their defaults.
+`{0} reset <command>`
+Resets all settings to their defaults, or resets the specified command.
 
 `{0} settings`
 Shows all settings.
