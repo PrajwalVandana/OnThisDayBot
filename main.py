@@ -148,7 +148,7 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 @client.event
 async def on_message(message_in):
     """When a message is received. """
-    if message.author == client.user:
+    if message_in.author == client.user:
         return
 
     guild_id = message_in.guild.id
