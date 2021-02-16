@@ -15,7 +15,7 @@ async def error(message):
 
 async def events(message, month, day, count):
     """Gets the events to send when !otd is called.
-    
+
     NOTE: January is month 1, not 0."""
     page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
                           auto_suggest=False).content.split('\n')
@@ -73,13 +73,15 @@ def today(guild_id, dateformat=None):
 
 def random_date():
     """Returns a random date."""
-    cumulative_days = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+    cumulative_days = [
+        0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
+    ]
 
     day_num = random.randint(1, 366)
     month = 1
     while day_num > cumulative_days[month]:
         month += 1
-    
+
     day = day_num - cumulative_days[month - 1]
 
     return month, day
@@ -137,7 +139,7 @@ async def on_guild_join(guild):
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
-"""Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
+                """Hello %s! I'm <@%d>. Use `%s help` to get a comprehensive list of my commands and their uses.
 Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 """ % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
@@ -146,6 +148,9 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 @client.event
 async def on_message(message_in):
     """When a message is received. """
+    if message.author == client.user:
+        return
+
     guild_id = message_in.guild.id
 
     message = message_in.content.split()
@@ -207,9 +212,8 @@ async def on_message(message_in):
                 valid_count = True
                 found_sep = False
             except (ValueError, AssertionError):
-                valid_count = False
-                found_sep = True
                 await error(message_in)
+                return
 
             i = 0
             while i in range(len(date_str)) and valid_count:
@@ -313,7 +317,10 @@ Shows all settings.
                 write(guild_id, message[0], DEFAULTS[message[0]])
                 await message_in.channel.send(
                     "The value `%s` has been reset to its default, %s." %
-                    (message[0], tz_format(DEFAULTS[message[0]]) if message[0] == 'timezone' else ('`' + DEFAULTS[message[0]] + '`' if message[0] != 'count' else DEFAULTS[message[0]])))
+                    (message[0], tz_format(DEFAULTS[message[0]])
+                     if message[0] == 'timezone' else
+                     ('`' + DEFAULTS[message[0]] +
+                      '`' if message[0] != 'count' else DEFAULTS[message[0]])))
             else:
                 await error(message_in)
         elif command == 'settings':
