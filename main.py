@@ -211,8 +211,14 @@ async def on_message(message_in):
                 assert 1 <= count <= 15
                 valid_count = True
                 found_sep = False
-            except (ValueError, AssertionError):
-                await error(message_in)
+            except ValueError:
+                await message_in.channel.send(
+                    "Sorry! The `count` value can only be an integer.")
+                return
+            except AssertionError:
+                await message_in.channel.send(
+                        "Sorry! The `count` value can only be an integer between `1` and `15`, inclusive."
+                )
                 return
 
             i = 0
@@ -349,11 +355,11 @@ This guild will be shown {3} {4} if no `count` value is specified.
                            'event' if count == 1 else 'events'))
                 else:
                     await message_in.channel.send(
-                        "Sorry! The `count` value can only be set to an integer between `1` and `15`, inclusive."
+                        "Sorry! The `count` value can only be an integer between `1` and `15`, inclusive."
                     )
             else:
                 await message_in.channel.send(
-                    "Sorry! The `count` value can only be set to an integer.")
+                    "Sorry! The `count` value can only be an integer.")
         elif command == 'random':
             if not message:
                 message.append(get(guild_id)['count'])
