@@ -217,7 +217,7 @@ async def on_message(message_in):
                 return
             except AssertionError:
                 await message_in.channel.send(
-                        "Sorry! The `count` value can only be an integer between `1` and `15`, inclusive."
+                    "Sorry! The `count` value can only be an integer between `1` and `15`, inclusive."
                 )
                 return
 
@@ -281,11 +281,11 @@ async def on_message(message_in):
 `{0} timezone <[+/-][hh]:[mm]>`
 Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.
 
-`{0} dm [day][separator][month] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
+`{0} dm [day: number][separator][month: number] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character.
 
-`{0} md [month][separator][day] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric character.
+`{0} md [month: number][separator][day: number] <count: number>`
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character.
 
 `{0} <[n1][separator][n2]> <count: number>`
 If no date is passed, shows `count` event(s) that happened today.
