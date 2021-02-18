@@ -319,7 +319,7 @@ Shows all settings.
                 del db[guild_id]
                 await message_in.channel.send(
                     "All settings have been reset to their defaults.")
-            elif message[0] in COMMANDS:
+            elif message[0] in DEFAULTS:
                 write(guild_id, message[0], DEFAULTS[message[0]])
                 await message_in.channel.send(
                     "The value `%s` has been reset to its default, %s." %
