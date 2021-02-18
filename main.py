@@ -274,46 +274,74 @@ async def on_message(message_in):
                     "Sorry! I can't understand that dateformat! The dateformats I recognize are `md` and `dm`."
                 )
         elif command == 'help':
-            await message_in.channel.send("""
-**Note 1**: If this guild's signal phrase is changed, all appearances of `{0}` will be replaced with your new signal phrase.
-**Note 2**: Anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means if one argument in that group is included, all arguments must be included.
+            if not message:
+                await message_in.channel.send("""
+Here is a list of commands:
+```
+timezone
+dm
+md
+random
+signal
+dateformat
+count
+help
+reset
+settings
+```
+Use `!otd help <command>` to get help on a specific command. 
 
-`{0} timezone <[+/-][hh]:[mm]>`
-Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.
+**Note 1**: All commands must be prefixed by your guild's signal phrase, which is currently `{0}`.
+**Note 2**: When looking at the help message for a command, anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means that if one argument in the group is included, then all arguments must be included.
+**Note 3**: If no command is passed, then the following format is used:
 
-`{0} dm [day: number][separator][month: number] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character.
-
-`{0} md [month: number][separator][day: number] <count: number>`
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character.
-
-`{0} <[n1][separator][n2]> <count: number>`
+```{0} <[n1][separator][n2]> <count: number>```
 If no date is passed, shows `count` event(s) that happened today.
-If `count` is not passed as well, then the guild's default `count` is used.
 Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.
-
-`{0} random <count: number>`
-Shows `count` events on a random date. If count is not specfied, the guild's default `count` is used.
-
-`{0} signal <phrase>`
-Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.
-
-`{0} dateformat <dm/md>`
-Changes the guild's dateformat to the specifed dateformat, or shows the guild's current dateformat if no new dateformat is specified.
-
-`{0} count <number>`
-Changes how many event(s) will be shown in the guild, or shows the current `count` value if no new value is specified. 
-
-`{0} help`
-Shows this help message.
-
-`{0} reset <command>`
-Resets all settings to their defaults, or resets the specified command.
-
-`{0} settings`
-Shows all settings.
 """.format(get(guild_id)['signal'],
-            get(guild_id)['dateformat']))
+                get(guild_id)['dateformat']))
+            elif message[0] == 'timezone':
+                await message_in.channel.send("""
+```{0} timezone <[+/-][hh]:[mm]>```
+Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.""")
+            elif message[0] == 'dm':
+                await message_in.channel.send("""
+```{0} dm [day: number][separator][month: number] <count: number>```
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""")
+            elif message[0] == 'md':
+                await message_in.channel.send("""
+```{0} md [month: number][separator][day: number] <count: number>```
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""")
+            elif message[0] == 'random':
+                await message_in.channel.send("""
+```{0} random <count: number>```
+Shows `count` events on a random date. If `count` is not specfied, the guild's default `count` is used.""")
+            elif message[0] == 'signal':
+                await message_in.channel.send("""
+```{0} signal <phrase>```
+Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.""")
+            elif message[0] == 'dateformat':
+                await message_in.channel.send("""
+```{0} dateformat <dm/md>```
+Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified.""")
+            elif message[0] == 'count':
+                await message_in.channel.send("""
+```{0} count <number>```
+Changes how many event(s) will be shown in the guild by default (the `count` value), or shows the current `count` value if no new value is specified.""")
+            elif message[0] == 'help':
+                await message_in.channel.send("""
+```{0} help <command>```
+Shows a list of commands if no command is specified, or shows how to use the specified command.""")
+            elif message[0] == 'reset':
+                await message_in.channel.send("""
+```{0} reset <command>```
+Resets all settings to their defaults, or resets the specified command.""")
+            elif message[0] == 'settings':
+                await message_in.channel.send("""
+```{0} settings```
+Shows all settings.""")
+            else:
+                await error(message_in)
         elif command == 'reset':
             if not message:
                 del db[guild_id]
