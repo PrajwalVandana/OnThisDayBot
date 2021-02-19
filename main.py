@@ -296,8 +296,8 @@ Use `!otd help <command>` to get help on a specific command.
 **Note 3**: If no command is passed, then the following format is used:
 
 ```{0} <[n1][separator][n2]> <count: number>```
-If no date is passed, shows `count` event(s) that happened today.
-Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.
+*If no date is passed, shows `count` event(s) that happened today.
+Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.*
 """.format(get(guild_id)['signal'],
                 get(guild_id)['dateformat']))
             elif message[0] == 'timezone':
