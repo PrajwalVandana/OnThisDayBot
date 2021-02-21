@@ -303,43 +303,43 @@ Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild'
             elif message[0] == 'timezone':
                 await message_in.channel.send("""
 ```{0} timezone <[+/-][hh]:[mm]>```
-Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.""")
+Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.""".format(get(guild_id)['signal']))
             elif message[0] == 'dm':
                 await message_in.channel.send("""
 ```{0} dm [day: number][separator][month: number] <count: number>```
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""")
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
             elif message[0] == 'md':
                 await message_in.channel.send("""
 ```{0} md [month: number][separator][day: number] <count: number>```
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""")
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
             elif message[0] == 'random':
                 await message_in.channel.send("""
 ```{0} random <count: number>```
-Shows `count` events on a random date. If `count` is not specfied, the guild's default `count` is used.""")
+Shows `count` events on a random date. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
             elif message[0] == 'signal':
                 await message_in.channel.send("""
 ```{0} signal <phrase>```
-Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.""")
+Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.""".format(get(guild_id)['signal']))
             elif message[0] == 'dateformat':
                 await message_in.channel.send("""
 ```{0} dateformat <dm/md>```
-Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified.""")
+Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified.""".format(get(guild_id)['signal']))
             elif message[0] == 'count':
                 await message_in.channel.send("""
 ```{0} count <number>```
-Changes how many event(s) will be shown in the guild by default (the `count` value), or shows the current `count` value if no new value is specified.""")
+Changes how many event(s) will be shown in the guild by default (the `count` value), or shows the current `count` value if no new value is specified.""".format(get(guild_id)['signal']))
             elif message[0] == 'help':
                 await message_in.channel.send("""
 ```{0} help <command>```
-Shows a list of commands if no command is specified, or shows how to use the specified command.""")
+Shows a list of commands if no command is specified, or shows how to use the specified command.""".format(get(guild_id)['signal']))
             elif message[0] == 'reset':
                 await message_in.channel.send("""
 ```{0} reset <command>```
-Resets all settings to their defaults, or resets the specified command.""")
+Resets all settings to their defaults, or resets the specified command.""".format(get(guild_id)['signal']))
             elif message[0] == 'settings':
                 await message_in.channel.send("""
 ```{0} settings```
-Shows all settings.""")
+Shows all settings.""".format(get(guild_id)['signal']))
             else:
                 await error(message_in)
         elif command == 'reset':
