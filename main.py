@@ -17,30 +17,35 @@ async def events(message, month, day, count):
     """Gets the events to send when !otd is called.
 
     NOTE: January is month 1, not 0."""
-    page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
-                          auto_suggest=False).content.split('\n')
 
-    events = []
-    i = 0
-    while ''.join(page[i].split()) != '==Events==':
+    try:
+        page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
+                              auto_suggest=False).content.split('\n')
+
+        events = []
+        i = 0
+        while ''.join(page[i].split()) != '==Events==':
+            i += 1
+
         i += 1
+        while not (page[i].startswith('==') and not page[i].startswith('===')):
+            if not page[i] or page[i].startswith('==='):
+                i += 1
+            else:
+                if page[i].startswith('0'):
+                    page[i] = page[i][1:]
+                events.append(' '.join(page[i].split()))
+                i += 1
 
-    i += 1
-    while not (page[i].startswith('==') and not page[i].startswith('===')):
-        if not page[i] or page[i].startswith('==='):
-            i += 1
-        else:
-            if page[i].startswith('0'):
-                page[i] = page[i][1:]
-            events.append(' '.join(page[i].split()))
-            i += 1
-
-    await message.channel.send(
-        '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
-            sorted(random.sample(events, count),
-                   key=lambda s: int(s[:s.find('–') - 1]))) +
-        '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
-        (MONTHS[month - 1], day))
+        await message.channel.send(
+            '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
+                sorted(random.sample(events, count),
+                       key=lambda s: int(s[:s.find('–') - 1].lower().strip(
+                           'adbc')))) +
+            '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
+            (MONTHS[month - 1], day))
+    except ValueError:
+        print(message, month, day, count)
 
 
 def get(guild_id):
@@ -289,11 +294,10 @@ help
 reset
 settings
 ```
-Use `!otd help <command>` to get help on a specific command. 
+Use `{0} help <command>` to get help on a specific command. 
 
-**Note 1**: All commands must be prefixed by your guild's signal phrase, which is currently `{0}`.
-**Note 2**: When looking at the help message for a command, anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means that if one argument in the group is included, then all arguments must be included.
-**Note 3**: If no command is passed, then the following format is used:
+**Note 1**: When looking at the help message for a command, anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means that if one argument in the group is included, then all arguments must be included.
+**Note 2**: If no command is passed, then the following format is used:
 
 ```{0} <[n1][separator][n2]> <count: number>```
 *If no date is passed, shows `count` event(s) that happened today.
@@ -303,39 +307,48 @@ Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild'
             elif message[0] == 'timezone':
                 await message_in.channel.send("""
 ```{0} timezone <[+/-][hh]:[mm]>```
-Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified.""".format(get(guild_id)['signal']))
+Changes the guild's timezone to the specified timezone, or shows the guild's current timezone if no new timezone is specified."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'dm':
                 await message_in.channel.send("""
 ```{0} dm [day: number][separator][month: number] <count: number>```
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'md':
                 await message_in.channel.send("""
 ```{0} md [month: number][separator][day: number] <count: number>```
-Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
+Shows `count` random historical event(s) that happened on the specified date. The separator can be any non-numeric, non-whitespace character. If `count` is not specfied, the guild's default `count` is used."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'random':
                 await message_in.channel.send("""
 ```{0} random <count: number>```
-Shows `count` events on a random date. If `count` is not specfied, the guild's default `count` is used.""".format(get(guild_id)['signal']))
+Shows `count` events on a random date. If `count` is not specfied, the guild's default `count` is used."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'signal':
                 await message_in.channel.send("""
 ```{0} signal <phrase>```
-Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified.""".format(get(guild_id)['signal']))
+Changes the guild's signal phrase to the specifed phrase, or shows the guild's current phrase if no new phrase is specified."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'dateformat':
                 await message_in.channel.send("""
 ```{0} dateformat <dm/md>```
-Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified.""".format(get(guild_id)['signal']))
+Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'count':
                 await message_in.channel.send("""
 ```{0} count <number>```
-Changes how many event(s) will be shown in the guild by default (the `count` value), or shows the current `count` value if no new value is specified.""".format(get(guild_id)['signal']))
+Changes how many event(s) will be shown in the guild by default (the `count` value), or shows the current `count` value if no new value is specified."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'help':
                 await message_in.channel.send("""
 ```{0} help <command>```
-Shows a list of commands if no command is specified, or shows how to use the specified command.""".format(get(guild_id)['signal']))
+Shows a list of commands if no command is specified, or shows how to use the specified command."""
+                                              .format(get(guild_id)['signal']))
             elif message[0] == 'reset':
                 await message_in.channel.send("""
 ```{0} reset <command>```
-Resets all settings to their defaults, or resets the specified command.""".format(get(guild_id)['signal']))
+Resets all settings to their defaults, or resets the specified command.""".
+                                              format(get(guild_id)['signal']))
             elif message[0] == 'settings':
                 await message_in.channel.send("""
 ```{0} settings```
