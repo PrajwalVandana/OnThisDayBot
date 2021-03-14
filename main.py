@@ -1,8 +1,9 @@
 import os
-from datetime import datetime, timezone, timedelta
+import random
 import wikipedia
 import discord
-import random
+
+from datetime import datetime, timezone, timedelta
 from replit import db
 
 
@@ -166,7 +167,22 @@ async def on_message(message_in):
     guild_id = message_in.guild.id
 
     message = message_in.content.split()
-    if message and message[0] == get(guild_id)['signal']:
+
+    if len(message) != 1:
+        look_for_signal = False  # only makes db call for signal if any command is in message
+        for word in message:
+            if word in COMMANDS:
+                look_for_signal = True
+    else:
+        look_for_signal = True
+
+
+    if look_for_signal:
+        message_to_bot = message and message[0] == get(guild_id)['signal']
+    else:
+        message_to_bot = False
+
+    if message_to_bot:
         message = message[1:]
 
         if not message:
