@@ -141,6 +141,7 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild):
+    print('Joined %s.' % guild.name)
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
@@ -148,6 +149,11 @@ async def on_guild_join(guild):
 Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 """ % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
+
+
+@client.event
+async def on_guild_remove(guild):
+    del db[guild.id]
 
 
 @client.event
