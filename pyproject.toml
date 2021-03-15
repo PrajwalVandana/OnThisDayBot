@@ -9,6 +9,8 @@ python = "^3.8"
 "discord.py" = "^1.6.0"
 replit = "^2.0.0"
 wikipedia = "^1.4.0"
+dblpy = "^0.4.0"
+termcolor = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 

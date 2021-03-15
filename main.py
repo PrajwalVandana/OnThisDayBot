@@ -2,9 +2,11 @@ import os
 import random
 import wikipedia
 import discord
+import dbl
 
 from datetime import datetime, timezone, timedelta
 from replit import db
+from termcolor import cprint
 
 
 async def error(message):
@@ -46,7 +48,7 @@ async def events(message, month, day, count):
             '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
             (MONTHS[month - 1], day))
     except ValueError:
-        print(message, month, day, count)
+        cprint(' '.join(message, month, day, count), 'yellow')
 
 
 def get(guild_id):
@@ -115,6 +117,7 @@ def tz_format(tz):
 
 
 client = discord.Client()
+dbl_ = dbl.DBLClient(client, os.getenv('DBL_TOKEN'), autopost=True)
 
 # hard-coded values
 DEFAULTS = {
@@ -137,12 +140,20 @@ COMMANDS = {
 
 @client.event
 async def on_ready():
-    print('Ready!')
+    cprint('Ready!', 'green')
+    guilds = await client.fetch_guilds(limit=150).flatten()
+    guild_ids = list(map(lambda g: g.id, guilds))
+    for guild_id in db.keys():
+        guild_id = int(guild_id)
+        if guild_id not in guild_ids:
+            del db[guild_id]
+            cprint('Deleted %d from database.' % guild_id, 'blue',
+                   'on_grey')
 
 
 @client.event
 async def on_guild_join(guild):
-    print('Joined %s! ID: %d' %(guild.name, guild.id))
+    cprint('Joined %s! ID: %d' % (guild.name, guild.id), 'green', 'on_grey')
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
@@ -155,7 +166,7 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 @client.event
 async def on_guild_remove(guild):
     del db[guild.id]
-    print('Left %s. ID: %d' %(guild.name, guild.id))
+    cprint('Left %s. ID: %d' % (guild.name, guild.id), 'red', 'on_grey')
 
 
 @client.event
@@ -175,7 +186,6 @@ async def on_message(message_in):
                 look_for_signal = True
     else:
         look_for_signal = True
-
 
     if look_for_signal:
         message_to_bot = message and message[0] == get(guild_id)['signal']
@@ -432,6 +442,11 @@ This guild will be shown {3} {4} if no `count` value is specified.
                 await events(message_in, *random_date(), int(message[0]))
             except ValueError:
                 await error(message_in)
+
+
+@client.event
+async def on_guild_post():
+    cprint('Guild count posted.', 'blue')
 
 
 # stored in .env to prevent people stealing the token
