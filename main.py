@@ -1,7 +1,8 @@
 import os
 import random
-import wikipedia
+import pytz
 import discord
+import wikipedia
 import dbl
 
 from datetime import datetime, timezone, timedelta
@@ -21,34 +22,31 @@ async def events(message, month, day, count):
 
     NOTE: January is month 1, not 0."""
 
-    try:
-        page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
-                              auto_suggest=False).content.split('\n')
+    page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
+                            auto_suggest=False).content.split('\n')
 
-        events = []
-        i = 0
-        while ''.join(page[i].split()) != '==Events==':
+    events = []
+    i = 0
+    while ''.join(page[i].split()) != '==Events==':
+        i += 1
+
+    i += 1
+    while not (page[i].startswith('==') and not page[i].startswith('===')):
+        if not page[i] or page[i].startswith('==='):
+            i += 1
+        else:
+            if page[i].startswith('0'):
+                page[i] = page[i][1:]
+            events.append(' '.join(page[i].split()))
             i += 1
 
-        i += 1
-        while not (page[i].startswith('==') and not page[i].startswith('===')):
-            if not page[i] or page[i].startswith('==='):
-                i += 1
-            else:
-                if page[i].startswith('0'):
-                    page[i] = page[i][1:]
-                events.append(' '.join(page[i].split()))
-                i += 1
-
-        await message.channel.send(
-            '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
-                sorted(random.sample(events, count),
-                       key=lambda s: int(s[:s.find('–') - 1].lower().strip(
-                           'adbc')))) +
-            '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
-            (MONTHS[month - 1], day))
-    except ValueError:
-        cprint(' '.join(message, month, day, count), 'yellow')
+    await message.channel.send(
+        '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
+            sorted(random.sample(events, count),
+                    key=lambda s: int(s[:s.find('–') - 1].lower().strip(
+                        'adbc')))) +
+        '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
+        (MONTHS[month - 1], day))
 
 
 def get(guild_id):
@@ -77,6 +75,11 @@ def today(guild_id, dateformat=None):
         timezone(
             timedelta(hours=get(guild_id)['timezone'][0],
                       minutes=get(guild_id)['timezone'][1]))).strftime(fmt_str)
+
+
+def time_now():
+    """Returns current time (for debug logs)."""
+    return datetime.now(pytz.timezone('US/Pacific')).strftime('%H:%M:%S %b %d %Y')
 
 
 def random_date():
@@ -140,20 +143,23 @@ COMMANDS = {
 
 @client.event
 async def on_ready():
-    cprint('Ready!', 'green')
+    cprint('%s :: Ready!'%time_now(), 'green')
     guilds = await client.fetch_guilds(limit=150).flatten()
     guild_ids = list(map(lambda g: g.id, guilds))
     for guild_id in db.keys():
         guild_id = int(guild_id)
         if guild_id not in guild_ids:
             del db[guild_id]
-            cprint('Deleted %d from database.' % guild_id, 'blue',
-                   'on_grey')
+            cprint(
+                '%s :: Deleted %d from database.' %
+                (time_now(), guild_id),
+                'blue', 'on_grey'
+            )
 
 
 @client.event
 async def on_guild_join(guild):
-    cprint('Joined %s! ID: %d' % (guild.name, guild.id), 'green', 'on_grey')
+    cprint('%s :: Joined %s! ID=%d' % (time_now(), guild.name, guild.id), 'green', 'on_grey')
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
@@ -166,7 +172,7 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 @client.event
 async def on_guild_remove(guild):
     del db[guild.id]
-    cprint('Left %s. ID: %d' % (guild.name, guild.id), 'red', 'on_grey')
+    cprint('%s :: Left %s. ID=%d' % (time_now(), guild.name, guild.id), 'red', 'on_grey')
 
 
 @client.event
@@ -446,7 +452,7 @@ This guild will be shown {3} {4} if no `count` value is specified.
 
 @client.event
 async def on_guild_post():
-    cprint('Guild count posted.', 'blue')
+    cprint('%s :: Guild count posted.'%time_now(), 'blue')
 
 
 # stored in .env to prevent people stealing the token
