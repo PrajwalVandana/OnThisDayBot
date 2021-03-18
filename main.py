@@ -10,6 +10,20 @@ from replit import db
 from termcolor import cprint
 
 
+class Cache:
+    def __init__(self, size):
+        if size <= 0:
+            raise ValueError(
+                "The 'size' of a cache must be a positive integer.")
+        self.size = size
+        self.data = []
+
+    def add(self, key, val):
+        self.data.append([key, val])
+        if len(self.data) > self.size:
+            del self.data[0]
+
+
 async def error(message):
     """For input errors."""
     await message.channel.send(
@@ -23,7 +37,7 @@ async def events(message, month, day, count):
     NOTE: January is month 1, not 0."""
 
     page = wikipedia.page(title=MONTHS[month - 1] + ' ' + str(day),
-                            auto_suggest=False).content.split('\n')
+                          auto_suggest=False).content.split('\n')
 
     events = []
     i = 0
@@ -43,8 +57,8 @@ async def events(message, month, day, count):
     await message.channel.send(
         '**%s %d**\n\n' % (MONTHS[month - 1], day) + '\n'.join(
             sorted(random.sample(events, count),
-                    key=lambda s: int(s[:s.find('–') - 1].lower().strip(
-                        'adbc')))) +
+                   key=lambda s: int(s[:s.find('–') - 1].lower().strip('adbc'))
+                   )) +
         '\n\nSee more at <https://en.wikipedia.org/wiki/%s_%d>.' %
         (MONTHS[month - 1], day))
 
@@ -52,11 +66,20 @@ async def events(message, month, day, count):
 def get(guild_id):
     """Gets the settings for a specific guild from the replit database given its id."""
     assert type(guild_id) == int
+
+    for c in CACHE.data:
+        if c[0] == guild_id:
+            return c[1]
+
     try:
-        return db[guild_id]
+        res = db[guild_id]
     except KeyError:
-        db[guild_id] = {key: val for (key, val) in DEFAULTS.items()}
-        return db[guild_id]
+        db[guild_id] = {k: v for (k, v) in DEFAULTS.items()}
+        res = db[guild_id]
+
+    CACHE.add(guild_id, res)
+
+    return res
 
 
 def today(guild_id, dateformat=None):
@@ -79,7 +102,8 @@ def today(guild_id, dateformat=None):
 
 def time_now():
     """Returns current time (for debug logs)."""
-    return datetime.now(pytz.timezone('US/Pacific')).strftime('%H:%M:%S %b %d %Y')
+    return datetime.now(
+        pytz.timezone('US/Pacific')).strftime('%H:%M:%S %b %d %Y')
 
 
 def random_date():
@@ -105,9 +129,14 @@ def write(guild_id, key, val):
     key: which setting is being entered/overwritten
     val: what the setting is being changed to"""
     assert type(guild_id) == int
+
     d = get(guild_id)
     d[key] = val
     db[guild_id] = d
+
+    for c in CACHE.data:
+        if c[0] == guild_id:
+            c[1][key] = val
 
 
 def tz_format(tz):
@@ -137,29 +166,28 @@ COMMANDS = {
     'timezone', 'dm', 'md', 'signal', 'dateformat', 'help', 'reset',
     'settings', 'count', 'random'
 }
+CACHE = Cache(10)
 
 # message_str = input()  # debug code
 
 
 @client.event
 async def on_ready():
-    cprint('%s :: Ready!'%time_now(), 'green')
+    cprint('%s :: Ready!' % time_now(), 'green')
     guilds = await client.fetch_guilds(limit=150).flatten()
     guild_ids = list(map(lambda g: g.id, guilds))
     for guild_id in db.keys():
         guild_id = int(guild_id)
         if guild_id not in guild_ids:
             del db[guild_id]
-            cprint(
-                '%s :: Deleted %d from database.' %
-                (time_now(), guild_id),
-                'blue', 'on_grey'
-            )
+            cprint('%s :: Deleted %d from database.' % (time_now(), guild_id),
+                   'blue', 'on_grey')
 
 
 @client.event
 async def on_guild_join(guild):
-    cprint('%s :: Joined %s! ID=%d' % (time_now(), guild.name, guild.id), 'green', 'on_grey')
+    cprint('%s :: Joined %s! ID=%d' % (time_now(), guild.name, guild.id),
+           'green', 'on_grey')
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
@@ -172,7 +200,8 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 @client.event
 async def on_guild_remove(guild):
     del db[guild.id]
-    cprint('%s :: Left %s. ID=%d' % (time_now(), guild.name, guild.id), 'red', 'on_grey')
+    cprint('%s :: Left %s. ID=%d' % (time_now(), guild.name, guild.id), 'red',
+           'on_grey')
 
 
 @client.event
@@ -185,20 +214,7 @@ async def on_message(message_in):
 
     message = message_in.content.split()
 
-    if len(message) != 1:
-        look_for_signal = False  # only makes db call for signal if any command is in message
-        for word in message:
-            if word in COMMANDS:
-                look_for_signal = True
-    else:
-        look_for_signal = True
-
-    if look_for_signal:
-        message_to_bot = message and message[0] == get(guild_id)['signal']
-    else:
-        message_to_bot = False
-
-    if message_to_bot:
+    if message and message[0] == get(guild_id)["signal"]:
         message = message[1:]
 
         if not message:
@@ -452,7 +468,7 @@ This guild will be shown {3} {4} if no `count` value is specified.
 
 @client.event
 async def on_guild_post():
-    cprint('%s :: Guild count posted.'%time_now(), 'blue')
+    cprint('%s :: Guild count posted.' % time_now(), 'blue')
 
 
 # stored in .env to prevent people stealing the token
