@@ -23,6 +23,9 @@ class Cache:
         if len(self.data) > self.size:
             del self.data[0]
 
+    def __str__(self):
+        return 'Cache(%d, %s)' % (self.size, self.data)
+
 
 async def error(message):
     """For input errors."""
@@ -468,7 +471,9 @@ This guild will be shown {3} {4} if no `count` value is specified.
 
 @client.event
 async def on_guild_post():
-    cprint('%s :: Guild count posted.' % time_now(), 'blue')
+    cprint(
+        '%s :: Guild count posted. COUNT=%d' %
+        (time_now(), dbl_.guild_count()), 'blue')
 
 
 # stored in .env to prevent people stealing the token
