@@ -152,7 +152,7 @@ def tz_format(tz):
 
 
 client = discord.Client()
-dbl_ = dbl.DBLClient(client, os.getenv('DBL_TOKEN'), autopost=True)
+dbl_ = dbl.DBLClient(client, os.environ['DBL_TOKEN'], autopost=True)
 
 # hard-coded values
 DEFAULTS = {
@@ -477,4 +477,4 @@ async def on_guild_post():
 
 
 # stored in .env to prevent people stealing the token
-client.run(os.getenv('TOKEN'))
+client.run(os.environ['TOKEN'])
