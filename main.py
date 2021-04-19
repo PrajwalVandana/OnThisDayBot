@@ -390,7 +390,8 @@ Changes the guild's signal phrase to the specifed phrase, or shows the guild's c
             elif message[0] == 'dateformat':
                 await message_in.channel.send("""
 ```{0} dateformat <dm/md>```
-Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified."""
+Changes the guild's default dateformat to the specified format, or shows the guild's current dateformat if no new format is specified.
+`dm` means day-month, `md` means month-day."""
                                               .format(get(guild_id)['signal']))
             elif message[0] == 'count':
                 await message_in.channel.send("""
