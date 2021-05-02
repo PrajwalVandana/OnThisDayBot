@@ -1,8 +1,9 @@
 import os
+import time
 import random
 import pytz
-import discord
 import wikipedia
+import discord
 import dbl
 
 from datetime import datetime, timezone, timedelta
@@ -170,27 +171,34 @@ COMMANDS = {
     'settings', 'count', 'random'
 }
 CACHE = Cache(10)
-
-# message_str = input()  # debug code
+TIMING = {}
 
 
 @client.event
 async def on_ready():
-    cprint('%s :: Ready!' % time_now(), 'green')
-    guilds = await client.fetch_guilds(limit=150).flatten()
-    guild_ids = list(map(lambda g: g.id, guilds))
+    global TIMING
+
+    guild_ids = list(map(lambda g: g.id, client.guilds))
+
     for guild_id in db.keys():
         guild_id = int(guild_id)
         if guild_id not in guild_ids:
             del db[guild_id]
             cprint('%s :: Deleted %d from database.' % (time_now(), guild_id),
                    'blue', 'on_grey')
+    
+    TIMING = {g: time.time() for g in guild_ids}
+
+    cprint('%s :: Ready!' % time_now(), 'green')
 
 
 @client.event
 async def on_guild_join(guild):
+    global TIMING
+
     cprint('%s :: Joined %s! ID=%d' % (time_now(), guild.name, guild.id),
            'green', 'on_grey')
+    TIMING[guild.id] = time.time()
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(
@@ -210,6 +218,8 @@ async def on_guild_remove(guild):
 @client.event
 async def on_message(message_in):
     """When a message is received. """
+    global TIMING
+
     if message_in.author == client.user:
         return
 
@@ -218,6 +228,12 @@ async def on_message(message_in):
     message = message_in.content.split()
 
     if message and message[0] == get(guild_id)["signal"]:
+        if (time.time() - TIMING[guild_id]) < 1:
+            await message_in.channel.send("You can only message once every second.")
+            return
+        else:
+            TIMING[guild_id] = time.time()
+
         message = message[1:]
 
         if not message:
@@ -477,5 +493,4 @@ async def on_guild_post():
         (time_now(), dbl_.guild_count()), 'blue')
 
 
-# stored in .env to prevent people stealing the token
 client.run(os.environ['TOKEN'])
