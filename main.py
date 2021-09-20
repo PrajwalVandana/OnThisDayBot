@@ -370,7 +370,7 @@ settings
 ```
 Use `{0} help <command>` to get help on a specific command. 
 
-**Note 1**: When looking at the help message for a command, anything enclosed by `[]` is an argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means that if one argument in the group is included, then all arguments must be included.
+**Note 1**: When looking at the help message for a command, anything enclosed by `[]` is a required argument, and anything enclosed in `<>` is an optional argument. A group of arguments enclosed in `<>` means that if one argument in the group is included, then all arguments must be included.
 **Note 2**: If no command is passed, then the following format is used:
 
 ```{0} <[n1][separator][n2]> <count: number>```
