@@ -5,6 +5,7 @@ import pytz
 import wikipedia
 import discord
 import dbl
+import keep_alive
 
 from datetime import datetime, timezone, timedelta
 from replit import db
@@ -376,6 +377,8 @@ Use `{0} help <command>` to get help on a specific command.
 ```{0} <[n1][separator][n2]> <count: number>```
 *If no date is passed, shows `count` event(s) that happened today.
 Otherwise, equivalent to `{0} {1} [n1][separator][n2] <count>` since this guild's default dateformat is `{1}`.*
+
+Need more help? Contact ColtsFan10#6790.
 """.format(get(guild_id)['signal'],
                 get(guild_id)['dateformat']))
             elif message[0] == 'timezone':
@@ -492,5 +495,6 @@ async def on_guild_post():
         '%s :: Guild count posted. COUNT=%d' %
         (time_now(), dbl_.guild_count()), 'blue')
 
+keep_alive.keep_alive()
 
 client.run(os.environ['TOKEN'])
