@@ -8,6 +8,7 @@ import dbl
 import keep_alive
 
 from datetime import datetime, timezone, timedelta
+from collections import defaultdict
 from replit import db
 from termcolor import cprint
 
@@ -172,7 +173,7 @@ COMMANDS = {
     'settings', 'count', 'random'
 }
 CACHE = Cache(10)
-TIMING = {}
+TIMING = defaultdict(int)
 
 
 @client.event
@@ -208,14 +209,6 @@ Check out my code at <https://github.com/PrajwalVandana/OnThisDayBot>!
 """ % (guild.name, guild.me.id, get(guild.id)['signal']))
             return
 
-
-@client.event
-async def on_guild_remove(guild):
-    del db[guild.id]
-    cprint('%s :: Left %s. ID=%d' % (time_now(), guild.name, guild.id), 'red',
-           'on_grey')
-
-
 @client.event
 async def on_message(message_in):
     """When a message is received. """
@@ -234,7 +227,6 @@ async def on_message(message_in):
             return
         else:
             TIMING[guild_id] = time.time()
-
         message = message[1:]
 
         if not message:
