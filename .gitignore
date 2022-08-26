@@ -1,0 +1,5 @@
+*.code-workspace
+ref.py
+.env
+notes.md
+db.json
