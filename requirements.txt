@@ -1,6 +1,5 @@
-discord.py==1.7.3
-# replit==2.0.0
-wikipedia==1.4.0
-dblpy==0.4.0
-termcolor==1.1.0
-pytz==2022.1
+py-cord
+wikipedia
+termcolor
+pytz
+requests

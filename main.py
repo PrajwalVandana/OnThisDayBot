@@ -1,16 +1,21 @@
-import os
-import random
-import pytz
-import wikipedia
-import discord
-import dbl
+import os  # os (builtin)
+import random  # random (builtin)
+import pytz  # pytz (pytz)
+import wikipedia  # wikipedia (wikipedia)
+import discord  # pycord (py-cord)
+import requests  # requests (requests)
+import time  # time (builtin)
+import multiprocessing  # multiprocessing (builtin)
+import atexit  # atexit (builtin)
+import sys  # sys (builtin)
 
 from discord.commands import Option
-from datetime import datetime
-from termcolor import cprint
+from datetime import datetime  # datetime (builtin)
+from termcolor import cprint  # termcolor (termcolor)
 
 
-DEBUG = True
+DEBUG = False
+MAX_EVENTS = 10
 
 
 MONTHS = [
@@ -27,19 +32,50 @@ MONTHS = [
     "November",
     "December",
 ]
+BACKGROUND_TASKS = []
+TOPGG_URL = "https://top.gg/api/bots/804445656088576002/stats"
+NUM_GUILDS = multiprocessing.Value("i", 0)
 
 
 if DEBUG:
     DEBUG_GUILDS = [520039773667328003]
+    BOT_TOKEN = os.environ["TEST_TOKEN"]
 else:
     DEBUG_GUILDS = None  # global
+    BOT_TOKEN = os.environ["TOKEN"]
 
 bot = discord.Bot(debug_guilds=DEBUG_GUILDS)
-dbl_ = dbl.DBLClient(bot, os.environ["DBL_TOKEN"], autopost=True)
 
-settings = bot.create_group(
-    "settings", "Server settings.", guild_ids=DEBUG_GUILDS
-)
+sys.stdout.reconfigure(line_buffering=True)
+
+def post_guild_count(num_guilds: multiprocessing.Value):
+    """Posts guild count to top.gg."""
+    while True:
+        try:
+            while num_guilds.value <= 0:
+                print("Waiting for bot to start ...")
+                time.sleep(10)
+
+            requests.post(
+                TOPGG_URL,
+                data={"server_count": str(num_guilds.value)},
+                headers={"Authorization": os.environ["TOPGG_TOKEN"]},
+            )
+            cprint(
+                "%s :: Posted guild count! COUNT=%d"
+                % (time_now(), num_guilds.value),
+                "green",
+                "on_grey",
+            )
+        except Exception as err:
+            cprint(
+                "%s :: Could not post guild count (COUNT=%d). %s: %s"
+                % (time_now(), num_guilds.value, type(err).__name__, err),
+                "red",
+                "on_grey",
+            )
+        finally:
+            time.sleep(1800)  # 30 minutes
 
 
 def time_now():
@@ -121,23 +157,27 @@ def random_date():
 
 @bot.event
 async def on_ready():
+    global NUM_GUILDS
+
+    NUM_GUILDS.value = len(bot.guilds)
+
     cprint("%s :: Ready!" % time_now(), "green")
+    if not DEBUG:
+        cprint(
+            "%s :: Current guild count is %d" % (time_now(), NUM_GUILDS.value),
+            "blue",
+        )
 
 
 @bot.event
 async def on_guild_join(guild):
+    global NUM_GUILDS
+
+    NUM_GUILDS.value = len(bot.guilds)
     cprint(
         "%s :: Joined %s! ID=%d" % (time_now(), guild.name, guild.id),
         "green",
         "on_grey",
-    )
-
-
-@bot.event
-async def on_guild_post():
-    cprint(
-        "%s :: Guild count posted. COUNT=%d" % (time_now(), dbl_.guild_count()),
-        "blue",
     )
 
 
@@ -156,6 +196,11 @@ async def otd(
     day: Option(int, "day", required=False, default=-1),
     count: Option(int, "number of events", required=False, default=3),
 ):
+    if count < 1 or count > MAX_EVENTS:
+        await ctx.respond(
+            f"The number of events must be between 1 and {MAX_EVENTS}, inclusive."
+        )
+        return
     if month == -1 or day == -1:
         today = datetime.now()
         month, day = today.month, today.day
@@ -169,6 +214,11 @@ async def random_otd(
     ctx,
     count: Option(int, "number of events", required=False, default=3),
 ):
+    if count < 1 or count > MAX_EVENTS:
+        await ctx.respond(
+            f"The number of events must be between 1 and {MAX_EVENTS}, inclusive."
+        )
+        return
     month, day = random_date()
     await send_events(ctx, month, day, count)
 
@@ -176,4 +226,21 @@ async def random_otd(
 # endregion
 
 
-bot.run(os.environ["TOKEN"])
+def cleanup():
+    for task in BACKGROUND_TASKS:
+        task.terminate()
+    cprint("%s :: Program terminated." % time_now(), "red")
+
+
+if __name__ == "__main__":
+    post_count_process = multiprocessing.Process(
+        target=post_guild_count, args=(NUM_GUILDS,)
+    )
+    BACKGROUND_TASKS.append(post_count_process)
+    post_count_process.start()
+
+    atexit.register(cleanup)
+
+    cprint(f"PROCESS ID: {os.getpid()}", "yellow")
+
+    bot.run(BOT_TOKEN)
