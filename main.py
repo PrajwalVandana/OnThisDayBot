@@ -1,6 +1,7 @@
 import multiprocessing  # multiprocessing (builtin)
 import os  # os (builtin)
 import random  # random (builtin)
+import socket  # socket (builtin)
 import sys  # sys (builtin)
 import time  # time (builtin)
 
@@ -35,11 +36,12 @@ MONTHS = [
     "December",
 ]
 TOPGG_URL = "https://top.gg/api/bots/804445656088576002/stats"
+PORT = 8080
 # endregion
 
 # region GLOBALS
 NUM_GUILDS = multiprocessing.Value("i", 0)
-BACKGROUND_TASKS = []
+# BACKGROUND_TASKS = []
 # endregion
 
 if DEBUG:
@@ -185,6 +187,7 @@ async def on_guild_join(guild):
         "green",
     )
 
+
 @bot.event
 async def on_guild_remove(guild):
     global NUM_GUILDS
@@ -241,12 +244,25 @@ async def random_otd(
 # endregion
 
 
+def fake_socket():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", PORT))
+    s.listen(1)
+    # l = []
+    while True:
+        c, a = s.accept()
+        # l.append(c)
+        # print('%d: connection from %s' % (len(l), a))"""
+
+
 if __name__ == "__main__":
     post_count_process = multiprocessing.Process(
         target=post_guild_count, args=(NUM_GUILDS,)
     )
-    BACKGROUND_TASKS.append(post_count_process)
+    fake_socket_process = multiprocessing.Process(target=fake_socket)
+    # BACKGROUND_TASKS.append(post_count_process)
     post_count_process.start()
+    fake_socket_process.start()
 
     cprint(f"PROCESS ID: {os.getpid()}", "yellow")
 
