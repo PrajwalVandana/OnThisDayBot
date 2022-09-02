@@ -1,23 +1,25 @@
+import multiprocessing  # multiprocessing (builtin)
 import os  # os (builtin)
 import random  # random (builtin)
-import pytz  # pytz (pytz)
-import wikipedia  # wikipedia (wikipedia)
-import discord  # pycord (py-cord)
-import requests  # requests (requests)
-import time  # time (builtin)
-import multiprocessing  # multiprocessing (builtin)
-import atexit  # atexit (builtin)
 import sys  # sys (builtin)
+import time  # time (builtin)
 
-from discord.commands import Option
+import discord  # pycord (py-cord)
+import pytz  # pytz (pytz)
+import requests  # requests (requests)
+import wikipedia  # wikipedia (wikipedia)
+
 from datetime import datetime  # datetime (builtin)
+from discord.commands import Option
 from termcolor import cprint  # termcolor (termcolor)
 
-
+# region SETTINGS
 DEBUG = False
 MAX_EVENTS = 10
+# endregion
 
 
+# region CONSTANTS
 MONTHS = [
     "January",
     "February",
@@ -32,10 +34,13 @@ MONTHS = [
     "November",
     "December",
 ]
-BACKGROUND_TASKS = []
 TOPGG_URL = "https://top.gg/api/bots/804445656088576002/stats"
-NUM_GUILDS = multiprocessing.Value("i", 0)
+# endregion
 
+# region GLOBALS
+NUM_GUILDS = multiprocessing.Value("i", 0)
+BACKGROUND_TASKS = []
+# endregion
 
 if DEBUG:
     DEBUG_GUILDS = [520039773667328003]
@@ -47,6 +52,7 @@ else:
 bot = discord.Bot(debug_guilds=DEBUG_GUILDS)
 
 sys.stdout.reconfigure(line_buffering=True)
+
 
 def post_guild_count(num_guilds: multiprocessing.Value):
     """Posts guild count to top.gg."""
@@ -162,11 +168,11 @@ async def on_ready():
     NUM_GUILDS.value = len(bot.guilds)
 
     cprint("%s :: Ready!" % time_now(), "green")
-    if not DEBUG:
-        cprint(
-            "%s :: Current guild count is %d" % (time_now(), NUM_GUILDS.value),
-            "blue",
-        )
+    # if not DEBUG:
+    #     cprint(
+    #         "%s :: Current guild count is %d" % (time_now(), NUM_GUILDS.value),
+    #         "blue",
+    #     )
 
 
 @bot.event
@@ -177,7 +183,16 @@ async def on_guild_join(guild):
     cprint(
         "%s :: Joined %s! ID=%d" % (time_now(), guild.name, guild.id),
         "green",
-        "on_grey",
+    )
+
+@bot.event
+async def on_guild_remove(guild):
+    global NUM_GUILDS
+
+    NUM_GUILDS.value = len(bot.guilds)
+    cprint(
+        "%s :: Left %s. ID=%d" % (time_now(), guild.name, guild.id),
+        "red",
     )
 
 
@@ -226,20 +241,12 @@ async def random_otd(
 # endregion
 
 
-def cleanup():
-    for task in BACKGROUND_TASKS:
-        task.terminate()
-    cprint("%s :: Program terminated." % time_now(), "red")
-
-
 if __name__ == "__main__":
     post_count_process = multiprocessing.Process(
         target=post_guild_count, args=(NUM_GUILDS,)
     )
     BACKGROUND_TASKS.append(post_count_process)
     post_count_process.start()
-
-    atexit.register(cleanup)
 
     cprint(f"PROCESS ID: {os.getpid()}", "yellow")
 
