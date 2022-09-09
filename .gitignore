@@ -4,3 +4,4 @@ ref.py
 notes.md
 db.json
 logs.txt
+__pycache__
